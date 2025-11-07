@@ -1,5 +1,5 @@
 import express from 'express';
-import Stats from '../models/Stats.js';
+import StatsJoin from '../models/StatsJoin.js';
 import { authenticateToken, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,13 +7,13 @@ const router = express.Router();
 // Get current stats
 router.get('/', async (req, res) => {
   try {
-    const stats = await Stats.findOne().sort({ createdAt: -1 });
+    const stats = await StatsJoin.findOne().sort({ createdAt: -1 });
     if (!stats) {
       const defaultStats = {
-        villages: 0,
-        problems: 0,
-        funds: 0,
-        volunteers: 0
+        activeVolunteers: 0,
+        constituenciesCovered: 0,
+        problemsSolved: 0,
+        fundsUtilized: 0
       };
       return res.json(defaultStats);
     }
@@ -27,38 +27,32 @@ router.get('/', async (req, res) => {
 router.patch('/update', authenticateToken, isAdmin, async (req, res) => {
   try {
     const {
-      villages, 
-      problems, 
-      funds, 
-      volunteers
+      activeVolunteers,
+      constituenciesCovered,
+      problemsSolved,
+      fundsUtilized
     } = req.body;
 
     const statsData = {
-      villages: Number(villages) || 0,
-      problems: Number(problems) || 0,
-      funds: Number(funds) || 0,
-      volunteers: Number(volunteers) || 0
+      activeVolunteers: Number(activeVolunteers) || 0,
+      constituenciesCovered: Number(constituenciesCovered) || 0,
+      problemsSolved: Number(problemsSolved) || 0,
+      fundsUtilized: Number(fundsUtilized) || 0
     };
 
-    let stats = await Stats.findOne().sort({ createdAt: -1 });
+    let stats = await StatsJoin.findOne().sort({ createdAt: -1 });
     
     if (stats) {
       Object.assign(stats, statsData);
       stats = await stats.save();
     } else {
-      stats = await Stats.create(statsData);
+      stats = await StatsJoin.create(statsData);
     }
 
-    res.json({
-      success: true,
-      message: 'Statistics updated successfully',
-      stats
-    });
-    
+    res.json(stats);
   } catch (error) {
     console.error('Stats update error:', error);
     res.status(500).json({ 
-      success: false,
       message: error.message || 'Failed to update statistics' 
     });
   }
